@@ -77,14 +77,13 @@ abstract class TweetSet {
    * and be implemented in the subclasses?
    */
   def descendingByRetweet: TweetList = {
-    def aaa() = try {
+    def isEmpty() = try {
       mostRetweeted
       false
     } catch {
       case e:java.util.NoSuchElementException => true
     }
-    println(aaa)
-    if(aaa) Nil else new Cons(mostRetweeted, remove(mostRetweeted).descendingByRetweet)
+    if(isEmpty) Nil else new Cons(mostRetweeted, remove(mostRetweeted).descendingByRetweet)
 
   }
   
@@ -151,7 +150,7 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
 
   def union(t: TweetSet): TweetSet = right.union(left.union(t.incl(elem)))
 
-  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = {
+  def filterAcc(p: Tweet => Boolean, acc: TweetSet = new Empty): TweetSet = {
     (if (p(elem)) acc.incl(elem) else acc)
           .union(left.filterAcc(p, acc))
           .union(right.filterAcc(p,acc))
