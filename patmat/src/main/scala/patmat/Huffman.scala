@@ -1,6 +1,7 @@
 package patmat
 
 import common._
+import scala.collection.immutable.Map
 
 /**
  * Assignment 4: Huffman coding
@@ -18,19 +19,24 @@ object Huffman {
    * present in the leaves below it. The weight of a `Fork` node is the sum of the weights of these
    * leaves.
    */
-    abstract class CodeTree
+  abstract class CodeTree
   case class Fork(left: CodeTree, right: CodeTree, chars: List[Char], weight: Int) extends CodeTree
   case class Leaf(char: Char, weight: Int) extends CodeTree
-  
+
 
   // Part 1: Basics
-    def weight(tree: CodeTree): Int = ??? // tree match ...
+  def weight(tree: CodeTree): Int = tree match {
+    case Fork(_, _, _, weight) => weight
+    case Leaf(_, weight) => weight
+  }
   
-    def chars(tree: CodeTree): List[Char] = ??? // tree match ...
+  def chars(tree: CodeTree): List[Char] = tree match {
+    case Fork(_, _, chars, _) => chars
+    case Leaf(char, _) => List(char)
+  }
   
   def makeCodeTree(left: CodeTree, right: CodeTree) =
     Fork(left, right, chars(left) ::: chars(right), weight(left) + weight(right))
-
 
 
   // Part 2: Generating Huffman trees
@@ -69,7 +75,16 @@ object Huffman {
    *       println("integer is  : "+ theInt)
    *   }
    */
-    def times(chars: List[Char]): List[(Char, Int)] = ???
+  def times(chars: List[Char]): List[(Char, Int)] = {
+    val init = Map[Char, Int]()
+    chars.map((_, 1)).foldLeft(init)((acc:Map[Char, Int], i:(Char, Int)) =>
+      i match {
+        case (char, n) =>
+          if(acc contains( char)) acc + (char -> (n + 1))
+          else acc + (char -> 1)
+      }
+    ).toList
+  }
   
   /**
    * Returns a list of `Leaf` nodes for a given frequency table `freqs`.
@@ -78,12 +93,15 @@ object Huffman {
    * head of the list should have the smallest weight), where the weight
    * of a leaf is the frequency of the character.
    */
-    def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = ???
+  def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] =
+    freqs.sortBy((freq) => freq._2)
+      .map((freq) => Leaf(freq._1, freq._2))
   
   /**
    * Checks whether the list `trees` contains only one single code tree.
    */
-    def singleton(trees: List[CodeTree]): Boolean = ???
+  def singleton(trees: List[CodeTree]): Boolean =
+    trees.length == 1
   
   /**
    * The parameter `trees` of this function is a list of code trees ordered
@@ -97,7 +115,10 @@ object Huffman {
    * If `trees` is a list of less than two elements, that list should be returned
    * unchanged.
    */
-    def combine(trees: List[CodeTree]): List[CodeTree] = ???
+  def combine(trees: List[CodeTree]): List[CodeTree] = trees match {
+    case first::second::rest => makeCodeTree(first, second)::rest
+    case list if list.length < 2 => list
+  }
   
   /**
    * This function will be called in the following way:
@@ -114,17 +135,19 @@ object Huffman {
    *  - start by defining the parameter types such that the above example invocation
    *    is valid. The parameter types of `until` should match the argument types of
    *    the example invocation. Also define the return type of the `until` function.
-   *  - try to find sensible parameter names for `xxx`, `yyy` and `zzz`.
+   *  - try to find sensible parameter names for `xxx`, `yyy` and `trees`.
    */
-    def until(xxx: ???, yyy: ???)(zzz: ???): ??? = ???
+  def until(singleton: List[CodeTree] => Boolean, combine: List[CodeTree] => List[CodeTree])(trees: List[CodeTree]): List[CodeTree] = if(singleton(trees)) trees else combine(trees) 
   
   /**
    * This function creates a code tree which is optimal to encode the text `chars`.
    *
    * The parameter `chars` is an arbitrary text. This function extracts the character
    * frequencies from that text and creates a code tree based on them.
-   */
-    def createCodeTree(chars: List[Char]): CodeTree = ???
+    */
+  def head(x: List[CodeTree]):CodeTree = x.head
+  def createCodeTree(chars: List[Char]): CodeTree =
+    (times _ andThen makeOrderedLeafList _ andThen combine _ andThen head _)(chars)
   
 
   // Part 3: Decoding
