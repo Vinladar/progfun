@@ -62,4 +62,10 @@ class HuffmanSuite extends FunSuite {
       assert(encode(t1)("ab".toList) === List(0, 1))
     }
   }
+
+  test("quick encode very short codes should work") {
+    new TestTrees {
+      assert(quickEncode(t1)("ab".toList) === List(0, 1))
+    }
+  }
 }
