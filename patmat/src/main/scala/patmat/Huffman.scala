@@ -80,7 +80,7 @@ object Huffman {
     chars.map((_, 1)).foldLeft(init)((acc:Map[Char, Int], i:(Char, Int)) =>
       i match {
         case (char, n) =>
-          if(acc contains( char)) acc + (char -> (n + 1))
+          if(acc.contains(char)) acc + (char -> (acc.get(char).map(_+1).getOrElse(1)))
           else acc + (char -> 1)
       }
     ).toList
@@ -116,7 +116,7 @@ object Huffman {
    * unchanged.
    */
   def combine(trees: List[CodeTree]): List[CodeTree] = trees match {
-    case first::second::rest => makeCodeTree(first, second)::rest.sortBy((tree:CodeTree) => weight(tree))
+    case first::second::rest => (makeCodeTree(first, second)::rest).sortBy(weight(_))
     case list if singleton(list) => list
   }
   
@@ -137,7 +137,7 @@ object Huffman {
    *    the example invocation. Also define the return type of the `until` function.
    *  - try to find sensible parameter names for `xxx`, `yyy` and `trees`.
    */
-  def until(singleton: List[CodeTree] => Boolean, combine: List[CodeTree] => List[CodeTree])(trees: List[CodeTree]): List[CodeTree] = if(singleton(trees)) trees else combine(trees) 
+  def until(singleton: List[CodeTree] => Boolean, combine: List[CodeTree] => List[CodeTree])(trees: List[CodeTree]): List[CodeTree] = if(singleton(trees)) trees else until(singleton, combine)(combine(trees))
   
   /**
    * This function creates a code tree which is optimal to encode the text `chars`.
@@ -197,12 +197,15 @@ object Huffman {
    * This function encodes `text` using the code tree `tree`
    * into a sequence of bits.
    */
-  def encode(tree: CodeTree)(text: List[Char]): List[Bit] =
-    (tree, text) match {
-      case (Fork(left, right, c, weight), head::rest) if c.contains(head) =>
-        if(chars(left).contains(head)) 0::encode(tree)(rest) else 1::encode(tree)(rest)
-      case (_, _) => Nil
+  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+     def encode1(tree:CodeTree, oc:Char):List[Bit] = tree match {
+       case Fork(left, right, _, _) =>
+        if(chars(left).contains(oc)) 0::encode1(left, oc) else 1::encode1(right,oc)
+      case _ => Nil
+    }
+    text.foldLeft(List[Bit]())((acc,n)=>acc ++ encode1(tree, n))
   }
+   
   
   // Part 4b: Encoding using code table
 
@@ -236,7 +239,7 @@ object Huffman {
    */
   def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable =
     a.foldLeft(List(('0', List[Bit]())))((acc, n) => {
-      n match {
+     n match {
         case (char, Nil) => acc.map(x=>(char, x._2))
         case (char, lb) => acc.map(x=>(char, lb ++ x._2))
       }
