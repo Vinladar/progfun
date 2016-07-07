@@ -34,10 +34,14 @@ object Anagrams {
    *
    *  Note: you must use `groupBy` to implement this method!
    */
-  def wordOccurrences(w: Word): Occurrences = ???
+  def wordOccurrences(w: Word): Occurrences = w.toLowerCase
+    .groupBy((c:Char) => c)
+    .toList
+    .sortBy(_._1)
+    .map(pair=>(pair._1, pair._2.length))
 
   /** Converts a sentence into its character occurrence list. */
-  def sentenceOccurrences(s: Sentence): Occurrences = ???
+  def sentenceOccurrences(s: Sentence): Occurrences = s.flatMap(wordOccurrences)
 
   /** The `dictionaryByOccurrences` is a `Map` from different occurrences to a sequence of all
    *  the words that have that occurrence count.
@@ -54,10 +58,10 @@ object Anagrams {
    *    List(('a', 1), ('e', 1), ('t', 1)) -> Seq("ate", "eat", "tea")
    *
    */
-  lazy val dictionaryByOccurrences: Map[Occurrences, List[Word]] = ???
+  lazy val dictionaryByOccurrences: Map[Occurrences, List[Word]] = dictionary.groupBy((w:Word)=>wordOccurrences(w))
 
   /** Returns all the anagrams of a given word. */
-  def wordAnagrams(word: Word): List[Word] = ???
+  def wordAnagrams(word: Word): List[Word] = dictionaryByOccurrences.get(wordOccurrences(word)).getOrElse(Nil)
 
   /** Returns the list of all subsets of the occurrence list.
    *  This includes the occurrence itself, i.e. `List(('k', 1), ('o', 1))`
@@ -81,7 +85,13 @@ object Anagrams {
    *  Note that the order of the occurrence list subsets does not matter -- the subsets
    *  in the example above could have been displayed in some other order.
    */
-  def combinations(occurrences: Occurrences): List[Occurrences] = ???
+  def combinations(occurrences: Occurrences): List[Occurrences] = occurrences match {
+    case Nil => List(Nil)
+    case x::tail => for {
+      i <- List.range(0, x._2+1)
+      y <- combinations(tail)
+    } yield if(i==0) y else (x._1, i)::y
+  }
 
   /** Subtracts occurrence list `y` from occurrence list `x`.
    *
@@ -93,7 +103,15 @@ object Anagrams {
    *  Note: the resulting value is an occurrence - meaning it is sorted
    *  and has no zero-entries.
    */
-  def subtract(x: Occurrences, y: Occurrences): Occurrences = ???
+  def subtract(x: Occurrences, y: Occurrences): Occurrences = y.foldLeft(x.toMap)((acc, n)=>{
+    val k:Char = n._1
+    val v:Int = n._2
+    lazy val nv:Int = acc(k)-v
+    if (acc(k)==1)
+      acc - k
+    else
+      acc + (k -> nv)
+  }).toList
 
   /** Returns a list of all anagram sentences of the given sentence.
    *
@@ -132,8 +150,22 @@ object Anagrams {
    *
    *  Note: in case that the words of the sentence are in the dictionary, then the sentence is the anagram of itself,
    *  so it has to be returned in this list.
-   *
+   *  
    *  Note: There is only one anagram of an empty sentence.
    */
-  def sentenceAnagrams(sentence: Sentence): List[Sentence] = ???
+  def sentenceAnagrams(sentence: Sentence): List[Sentence] = {
+    val occ = sentenceOccurrences(sentence)
+    if (occ.isEmpty) return List(Nil)
+    def hehe(occ: Occurrences):List[Sentence] = {
+      val validCombs = combinations(occ).filter(dictionaryByOccurrences.contains)
+      for {
+        comb <- validCombs
+        word <- dictionaryByOccurrences(comb)
+        rest <- hehe(subtract(occ, comb))
+      } yield {
+        word::rest
+      }
+    }
+    hehe(occ)
+  }
 }
