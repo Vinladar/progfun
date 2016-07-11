@@ -59,7 +59,7 @@ class AnagramsSuite extends FunSuite  {
   test("subtract: assessment - assess") {
     val assessment = List(('a', 1), ('s', 4), ('e', 2), ('m', 1), ('n', 1), ('t',1))
     val assess = List(('a', 1), ('s', 4), ('e', 1))
-    val lad = List(('e', 1), ('n', 1), ('t', 1), ('m', 1))
+    val lad = List(('e', 1), ('m', 1), ('n', 1), ('t', 1))
     assert(subtract(assessment, assess) === lad)
   }
 
@@ -87,11 +87,6 @@ class AnagramsSuite extends FunSuite  {
 
   test("sentence anagrams: []") {
     val sentence = List()
-    // assert(sentenceAnagrams(sentence) === List(Nil))
-  }
-
-  test("sentence anagrams: Lukas Rytz") {
-    val sentence = List("nil", "Uzi")
     assert(sentenceAnagrams(sentence) === List(Nil))
   }
 
