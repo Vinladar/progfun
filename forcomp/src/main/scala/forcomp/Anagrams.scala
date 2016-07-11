@@ -113,7 +113,7 @@ object Anagrams {
       acc - k
     else
       acc + (k -> nv)
-  }).toList.filter(x=>x._2!=0)
+  }).toList.filter(x=>x._2!=0).sortBy(_._1)
 
   /** Returns a list of all anagram sentences of the given sentence.
    *
