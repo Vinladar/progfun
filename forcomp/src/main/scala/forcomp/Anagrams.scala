@@ -41,7 +41,8 @@ object Anagrams {
     .map(pair=>(pair._1, pair._2.length))
 
   /** Converts a sentence into its character occurrence list. */
-  def sentenceOccurrences(s: Sentence): Occurrences = s.flatMap(wordOccurrences)
+  def sentenceOccurrences(s: Sentence): Occurrences =
+    wordOccurrences(s.foldLeft("")((acc,word)=>acc ++ word))
 
   /** The `dictionaryByOccurrences` is a `Map` from different occurrences to a sequence of all
    *  the words that have that occurrence count.
@@ -85,7 +86,8 @@ object Anagrams {
    *  Note that the order of the occurrence list subsets does not matter -- the subsets
    *  in the example above could have been displayed in some other order.
    */
-  def combinations(occurrences: Occurrences): List[Occurrences] = occurrences match {
+  def combinations(occurrences: Occurrences): List[Occurrences] =
+    occurrences match {
     case Nil => List(Nil)
     case x::tail => for {
       i <- List.range(0, x._2+1)
@@ -111,7 +113,7 @@ object Anagrams {
       acc - k
     else
       acc + (k -> nv)
-  }).toList
+  }).toList.filter(x=>x._2!=0)
 
   /** Returns a list of all anagram sentences of the given sentence.
    *
@@ -155,17 +157,17 @@ object Anagrams {
    */
   def sentenceAnagrams(sentence: Sentence): List[Sentence] = {
     val occ = sentenceOccurrences(sentence)
-    if (occ.isEmpty) return List(Nil)
-    def hehe(occ: Occurrences):List[Sentence] = {
-      val validCombs = combinations(occ).filter(dictionaryByOccurrences.contains)
-      for {
-        comb <- validCombs
-        word <- dictionaryByOccurrences(comb)
-        rest <- hehe(subtract(occ, comb))
-      } yield {
-        word::rest
-      }
-    }
     hehe(occ)
+  }
+
+  def hehe(occ: Occurrences):List[Sentence] = occ match {
+    case Nil => List(Nil)
+    case _ => {
+      for {
+        comb <- combinations(occ)
+        word <- dictionaryByOccurrences.get(comb).getOrElse(Nil)
+        rest <- hehe(subtract(occ, comb)) if !occ.isEmpty
+      } yield word::rest
+    }
   }
 }
